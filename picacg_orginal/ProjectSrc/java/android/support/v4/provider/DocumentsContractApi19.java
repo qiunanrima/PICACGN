@@ -1,0 +1,243 @@
+package android.support.v4.provider;
+
+import android.content.ContentResolver;
+import android.content.Context;
+import android.database.Cursor;
+import android.net.Uri;
+import android.provider.DocumentsContract;
+import android.support.annotation.RequiresApi;
+import android.text.TextUtils;
+import android.util.Log;
+@RequiresApi(19)
+/* loaded from: picacg_1.jar:android/support/v4/provider/DocumentsContractApi19.class */
+class DocumentsContractApi19 {
+    private static final int FLAG_VIRTUAL_DOCUMENT = 512;
+    private static final String TAG = "DocumentFile";
+
+    DocumentsContractApi19() {
+    }
+
+    public static boolean canRead(Context context, Uri uri) {
+        return context.checkCallingOrSelfUriPermission(uri, 1) == 0 && !TextUtils.isEmpty(getRawType(context, uri));
+    }
+
+    public static boolean canWrite(Context context, Uri uri) {
+        if (context.checkCallingOrSelfUriPermission(uri, 2) != 0) {
+            return false;
+        }
+        String rawType = getRawType(context, uri);
+        int queryForInt = queryForInt(context, uri, "flags", 0);
+        if (TextUtils.isEmpty(rawType)) {
+            return false;
+        }
+        if ((queryForInt & 4) != 0) {
+            return true;
+        }
+        if (!"vnd.android.document/directory".equals(rawType) || (queryForInt & 8) == 0) {
+            return (TextUtils.isEmpty(rawType) || (queryForInt & 2) == 0) ? false : true;
+        }
+        return true;
+    }
+
+    private static void closeQuietly(AutoCloseable autoCloseable) {
+        if (autoCloseable != null) {
+            try {
+                autoCloseable.close();
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Exception e2) {
+            }
+        }
+    }
+
+    public static boolean delete(Context context, Uri uri) {
+        try {
+            return DocumentsContract.deleteDocument(context.getContentResolver(), uri);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public static boolean exists(Context context, Uri uri) {
+        Cursor cursor;
+        Throwable th;
+        ContentResolver contentResolver = context.getContentResolver();
+        boolean z = true;
+        Cursor cursor2 = null;
+        try {
+            try {
+                cursor = contentResolver.query(uri, new String[]{"document_id"}, null, null, null);
+            } catch (Exception e) {
+                e = e;
+                cursor = null;
+            }
+        } catch (Throwable th2) {
+            cursor = cursor2;
+            th = th2;
+        }
+        try {
+            if (cursor.getCount() <= 0) {
+                z = false;
+            }
+            closeQuietly(cursor);
+            return z;
+        } catch (Exception e2) {
+            e = e2;
+            Cursor cursor3 = cursor;
+            StringBuilder sb = new StringBuilder();
+            Cursor cursor4 = cursor;
+            sb.append("Failed query: ");
+            Cursor cursor5 = cursor;
+            sb.append(e);
+            cursor2 = cursor;
+            Log.w(TAG, sb.toString());
+            closeQuietly(cursor);
+            return false;
+        } catch (Throwable th3) {
+            th = th3;
+            closeQuietly(cursor);
+            throw th;
+        }
+    }
+
+    public static long getFlags(Context context, Uri uri) {
+        return queryForLong(context, uri, "flags", 0L);
+    }
+
+    public static String getName(Context context, Uri uri) {
+        return queryForString(context, uri, "_display_name", null);
+    }
+
+    private static String getRawType(Context context, Uri uri) {
+        return queryForString(context, uri, "mime_type", null);
+    }
+
+    public static String getType(Context context, Uri uri) {
+        String rawType = getRawType(context, uri);
+        if ("vnd.android.document/directory".equals(rawType)) {
+            return null;
+        }
+        return rawType;
+    }
+
+    public static boolean isDirectory(Context context, Uri uri) {
+        return "vnd.android.document/directory".equals(getRawType(context, uri));
+    }
+
+    public static boolean isDocumentUri(Context context, Uri uri) {
+        return DocumentsContract.isDocumentUri(context, uri);
+    }
+
+    public static boolean isFile(Context context, Uri uri) {
+        String rawType = getRawType(context, uri);
+        return ("vnd.android.document/directory".equals(rawType) || TextUtils.isEmpty(rawType)) ? false : true;
+    }
+
+    public static boolean isVirtual(Context context, Uri uri) {
+        boolean z = false;
+        if (isDocumentUri(context, uri)) {
+            if ((getFlags(context, uri) & 512) != 0) {
+                z = true;
+            }
+            return z;
+        }
+        return false;
+    }
+
+    public static long lastModified(Context context, Uri uri) {
+        return queryForLong(context, uri, "last_modified", 0L);
+    }
+
+    public static long length(Context context, Uri uri) {
+        return queryForLong(context, uri, "_size", 0L);
+    }
+
+    private static int queryForInt(Context context, Uri uri, String str, int i) {
+        return (int) queryForLong(context, uri, str, i);
+    }
+
+    private static long queryForLong(Context context, Uri uri, String str, long j) {
+        Cursor cursor;
+        Throwable th;
+        ContentResolver contentResolver = context.getContentResolver();
+        Cursor cursor2 = null;
+        try {
+            try {
+                cursor = contentResolver.query(uri, new String[]{str}, null, null, null);
+            } catch (Exception e) {
+                e = e;
+                cursor = null;
+            }
+        } catch (Throwable th2) {
+            cursor = cursor2;
+            th = th2;
+        }
+        try {
+            if (!cursor.moveToFirst() || cursor.isNull(0)) {
+                closeQuietly(cursor);
+                return j;
+            }
+            long j2 = cursor.getLong(0);
+            closeQuietly(cursor);
+            return j2;
+        } catch (Exception e2) {
+            e = e2;
+            Cursor cursor3 = cursor;
+            StringBuilder sb = new StringBuilder();
+            Cursor cursor4 = cursor;
+            sb.append("Failed query: ");
+            Cursor cursor5 = cursor;
+            sb.append(e);
+            cursor2 = cursor;
+            Log.w(TAG, sb.toString());
+            closeQuietly(cursor);
+            return j;
+        } catch (Throwable th3) {
+            th = th3;
+            closeQuietly(cursor);
+            throw th;
+        }
+    }
+
+    private static String queryForString(Context context, Uri uri, String str, String str2) {
+        Cursor cursor;
+        ContentResolver contentResolver = context.getContentResolver();
+        Cursor cursor2 = null;
+        try {
+            try {
+                cursor = contentResolver.query(uri, new String[]{str}, null, null, null);
+            } catch (Throwable th) {
+                th = th;
+            }
+        } catch (Exception e) {
+            e = e;
+            cursor = null;
+        }
+        try {
+            if (!cursor.moveToFirst() || cursor.isNull(0)) {
+                closeQuietly(cursor);
+                return str2;
+            }
+            String string = cursor.getString(0);
+            closeQuietly(cursor);
+            return string;
+        } catch (Exception e2) {
+            e = e2;
+            Cursor cursor3 = cursor;
+            StringBuilder sb = new StringBuilder();
+            Cursor cursor4 = cursor;
+            sb.append("Failed query: ");
+            Cursor cursor5 = cursor;
+            sb.append(e);
+            Cursor cursor6 = cursor;
+            Log.w(TAG, sb.toString());
+            closeQuietly(cursor);
+            return str2;
+        } catch (Throwable th2) {
+            cursor2 = cursor;
+            th = th2;
+            closeQuietly(cursor2);
+            throw th;
+        }
+    }
+}

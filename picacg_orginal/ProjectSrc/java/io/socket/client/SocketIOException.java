@@ -1,0 +1,14 @@
+package io.socket.client;
+/* loaded from: picacg_1.jar:io/socket/client/SocketIOException.class */
+public class SocketIOException extends Exception {
+    public SocketIOException() {
+    }
+
+    public SocketIOException(String str) {
+        super(str);
+    }
+
+    public SocketIOException(String str, Throwable th) {
+        super(str, th);
+    }
+}
