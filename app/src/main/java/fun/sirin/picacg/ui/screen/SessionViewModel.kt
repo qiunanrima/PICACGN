@@ -29,6 +29,7 @@ data class SessionUiState(
     val selectedCategory: String? = null,
     val searchQuery: String = "",
     val selectedComicDetail: ComicDetail? = null,
+    val currentComicId: String? = null,
     val episodes: List<PicaEpisode> = emptyList(),
     val currentEpisode: PicaEpisode? = null,
     val pageUrls: List<String> = emptyList(),
@@ -56,7 +57,9 @@ class SessionViewModel(
         }
     }
 
-    fun updateSearchQuery(query: String) { _uiState.value = _uiState.value.copy(searchQuery = query) }
+    fun updateSearchQuery(query: String) {
+        _uiState.value = _uiState.value.copy(searchQuery = query)
+    }
 
     fun searchComics() {
         val query = _uiState.value.searchQuery.trim()
@@ -86,7 +89,9 @@ class SessionViewModel(
                         selectedCategory = first,
                         message = if (categories.isEmpty()) "未获取到分类" else null
                     )
-                    if (!first.isNullOrBlank()) loadComicsByCategory(first)
+                    if (!first.isNullOrBlank()) {
+                        loadComicsByCategory(first)
+                    }
                 }
                 is ApiResult.Error -> _uiState.value = _uiState.value.copy(loading = false, message = result.message)
             }
@@ -107,7 +112,11 @@ class SessionViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(loading = true)
             when (val result = browseRepository.loadComicDetail(comicId)) {
-                is ApiResult.Success -> _uiState.value = _uiState.value.copy(loading = false, selectedComicDetail = result.data)
+                is ApiResult.Success -> _uiState.value = _uiState.value.copy(
+                    loading = false,
+                    selectedComicDetail = result.data,
+                    currentComicId = result.data.id
+                )
                 is ApiResult.Error -> _uiState.value = _uiState.value.copy(loading = false, message = result.message)
             }
         }
@@ -119,13 +128,17 @@ class SessionViewModel(
             _uiState.value = _uiState.value.copy(loading = true)
             when (val epsResult = browseRepository.loadEpisodes(detail.id)) {
                 is ApiResult.Success -> {
-                    val saved = readerPrefsStore.progressFlow.firstOrNull()
+                    val saved = readerPrefsStore.getProgress(detail.id)
                     val firstEpisode = epsResult.data.firstOrNull { it.order == saved?.episodeOrder } ?: epsResult.data.firstOrNull()
                     if (firstEpisode == null) {
                         _uiState.value = _uiState.value.copy(loading = false, message = "没有可阅读章节")
                         return@launch
                     }
-                    _uiState.value = _uiState.value.copy(episodes = epsResult.data)
+                    _uiState.value = _uiState.value.copy(
+                        episodes = epsResult.data,
+                        currentComicId = detail.id,
+                        selectedComicDetail = null
+                    )
                     openEpisode(firstEpisode, initialPage = if (saved?.comicId == detail.id) saved.pageIndex else 0)
                 }
                 is ApiResult.Error -> _uiState.value = _uiState.value.copy(loading = false, message = epsResult.message)
@@ -134,14 +147,14 @@ class SessionViewModel(
     }
 
     fun openEpisode(episode: PicaEpisode, initialPage: Int = 0) {
-        val detail = _uiState.value.selectedComicDetail ?: return
+        val comicId = _uiState.value.currentComicId ?: return
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(loading = true, currentEpisode = episode)
-            when (val pagesResult = browseRepository.loadPageUrls(detail.id, episode.order)) {
+            when (val pagesResult = browseRepository.loadPageUrls(comicId, episode.order)) {
                 is ApiResult.Success -> {
                     val safePage = initialPage.coerceIn(0, (pagesResult.data.size - 1).coerceAtLeast(0))
                     _uiState.value = _uiState.value.copy(loading = false, pageUrls = pagesResult.data, currentPageIndex = safePage)
-                    readerPrefsStore.saveProgress(detail.id, episode.order, safePage)
+                    readerPrefsStore.saveProgress(comicId, episode.order, safePage)
                 }
                 is ApiResult.Error -> _uiState.value = _uiState.value.copy(loading = false, message = pagesResult.message)
             }
@@ -168,23 +181,25 @@ class SessionViewModel(
 
     private fun persistProgress() {
         val state = _uiState.value
-        val detail = state.selectedComicDetail ?: return
+        val comicId = state.currentComicId ?: return
         val episode = state.currentEpisode ?: return
         viewModelScope.launch {
-            readerPrefsStore.saveProgress(detail.id, episode.order, state.currentPageIndex)
+            readerPrefsStore.saveProgress(comicId, episode.order, state.currentPageIndex)
         }
     }
 
-    fun closeReader() { _uiState.value = _uiState.value.copy(pageUrls = emptyList(), currentPageIndex = 0, currentEpisode = null) }
+    fun closeReader() {
+        persistProgress()
+        _uiState.value = _uiState.value.copy(
+            pageUrls = emptyList(),
+            currentPageIndex = 0,
+            currentEpisode = null,
+            episodes = emptyList()
+        )
+    }
 
     fun clearComicDetail() {
-        _uiState.value = _uiState.value.copy(
-            selectedComicDetail = null,
-            episodes = emptyList(),
-            currentEpisode = null,
-            pageUrls = emptyList(),
-            currentPageIndex = 0
-        )
+        _uiState.value = _uiState.value.copy(selectedComicDetail = null)
     }
 
     companion object {

@@ -34,10 +34,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import fun.sirin.picacg.R
 import fun.sirin.picacg.core.network.PicaEpisode
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,7 +53,7 @@ fun PicacgApp(vm: SessionViewModel) {
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("PICACG") }) },
+        topBar = { TopAppBar(title = { Text(stringResource(R.string.title_app)) }) },
         snackbarHost = { SnackbarHost(snackbars) }
     ) { padding ->
         if (!ui.loggedIn) {
@@ -110,11 +112,11 @@ private fun HomeScreen(
                 value = uiState.searchQuery,
                 onValueChange = onSearchQueryChange,
                 modifier = Modifier.weight(1f),
-                label = { Text("搜索漫画") },
+                label = { Text(stringResource(R.string.label_search_comic)) },
                 singleLine = true
             )
             Button(onClick = onSearch, enabled = !uiState.loading) {
-                Text("搜索")
+                Text(stringResource(R.string.action_search))
             }
         }
 
@@ -125,9 +127,9 @@ private fun HomeScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("分类", fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.label_categories), fontWeight = FontWeight.SemiBold)
             Button(onClick = onReloadCategories, enabled = !uiState.loading) {
-                Text("刷新")
+                Text(stringResource(R.string.action_refresh))
             }
         }
 
@@ -164,7 +166,7 @@ private fun HomeScreen(
         }
 
         Text(
-            text = "漫画列表",
+            text = stringResource(R.string.label_comic_list),
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(top = 12.dp, bottom = 8.dp)
         )
@@ -181,10 +183,10 @@ private fun HomeScreen(
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text(comic.title, fontWeight = FontWeight.Medium)
-                        comic.author?.let { Text("作者：$it") }
+                        comic.author?.let { Text(stringResource(R.string.label_author, it)) }
                         comic.likesCount?.let { Text("❤️ $it") }
                         TextButton(onClick = { onOpenDetail(comic.id) }) {
-                            Text("查看详情")
+                            Text(stringResource(R.string.action_view_detail))
                         }
                     }
                 }
@@ -198,20 +200,20 @@ private fun HomeScreen(
             confirmButton = {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextButton(onClick = onStartReader) {
-                        Text("开始阅读")
+                        Text(stringResource(R.string.action_start_reading))
                     }
                     TextButton(onClick = onDismissDetail) {
-                        Text("关闭")
+                        Text(stringResource(R.string.action_close))
                     }
                 }
             },
             title = { Text(detail.title) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    detail.author?.let { Text("作者：$it") }
+                    detail.author?.let { Text(stringResource(R.string.label_author, it)) }
                     detail.description?.let { Text(it) }
-                    Text("点赞：${detail.likesCount ?: 0}")
-                    Text("章节：${detail.epsCount ?: 0}，页数：${detail.pagesCount ?: 0}")
+                    Text(stringResource(R.string.label_likes, detail.likesCount ?: 0))
+                    Text(stringResource(R.string.label_eps_pages, detail.epsCount ?: 0, detail.pagesCount ?: 0))
                 }
             }
         )
@@ -226,17 +228,24 @@ private fun HomeScreen(
             confirmButton = {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextButton(onClick = onPrevPage, enabled = uiState.currentPageIndex > 0) {
-                        Text("上一页")
+                        Text(stringResource(R.string.action_prev_page))
                     }
                     TextButton(onClick = onNextPage, enabled = uiState.currentPageIndex < total - 1) {
-                        Text("下一页")
+                        Text(stringResource(R.string.action_next_page))
                     }
                     TextButton(onClick = onCloseReader) {
-                        Text("退出")
+                        Text(stringResource(R.string.action_exit))
                     }
                 }
             },
-            title = { Text("阅读器（${uiState.currentEpisode?.title ?: "章节"}）") },
+            title = {
+                Text(
+                    stringResource(
+                        R.string.label_reader_title,
+                        uiState.currentEpisode?.title ?: stringResource(R.string.label_default_episode)
+                    )
+                )
+            },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(
@@ -249,7 +258,7 @@ private fun HomeScreen(
                             val selected = episode.id == uiState.currentEpisode?.id
                             AssistChip(
                                 onClick = { onOpenEpisode(episode) },
-                                label = { Text("第${episode.order}话") },
+                                label = { Text(stringResource(R.string.label_episode_order, episode.order)) },
                                 colors = if (selected) {
                                     AssistChipDefaults.assistChipColors(
                                         containerColor = MaterialTheme.colorScheme.secondaryContainer
@@ -258,10 +267,10 @@ private fun HomeScreen(
                             )
                         }
                     }
-                    Text("第 $page / $total 页")
+                    Text(stringResource(R.string.label_page_progress, page, total))
                     AsyncImage(
                         model = currentUrl,
-                        contentDescription = "reader page",
+                        contentDescription = stringResource(R.string.content_reader_page),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 4.dp)
@@ -293,7 +302,7 @@ private fun LoginScreen(
             value = email,
             onValueChange = { email = it },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("邮箱") },
+            label = { Text(stringResource(R.string.label_email)) },
             singleLine = true
         )
         OutlinedTextField(
@@ -302,7 +311,7 @@ private fun LoginScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 12.dp),
-            label = { Text("密码") },
+            label = { Text(stringResource(R.string.label_password)) },
             visualTransformation = PasswordVisualTransformation(),
             singleLine = true
         )
@@ -316,7 +325,7 @@ private fun LoginScreen(
             if (loading) {
                 CircularProgressIndicator()
             } else {
-                Text("登录")
+                Text(stringResource(R.string.action_login))
             }
         }
     }
