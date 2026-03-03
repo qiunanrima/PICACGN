@@ -1,3 +1,26 @@
 <resources>
-    <string name="app_name">PICACG</string>
+    <string name="app_name">PICACG Client</string>
+    <string name="title_app">PICACG</string>
+    <string name="label_search_comic">搜索漫画</string>
+    <string name="action_search">搜索</string>
+    <string name="label_categories">分类</string>
+    <string name="action_refresh">刷新</string>
+    <string name="label_comic_list">漫画列表</string>
+    <string name="label_author">作者：%1$s</string>
+    <string name="action_view_detail">查看详情</string>
+    <string name="action_start_reading">开始阅读</string>
+    <string name="action_close">关闭</string>
+    <string name="label_likes">点赞：%1$d</string>
+    <string name="label_eps_pages">章节：%1$d，页数：%2$d</string>
+    <string name="action_prev_page">上一页</string>
+    <string name="action_next_page">下一页</string>
+    <string name="action_exit">退出</string>
+    <string name="label_reader_title">阅读器（%1$s）</string>
+    <string name="label_default_episode">章节</string>
+    <string name="label_episode_order">第%1$d话</string>
+    <string name="label_page_progress">第 %1$d / %2$d 页</string>
+    <string name="content_reader_page">阅读页</string>
+    <string name="label_email">邮箱</string>
+    <string name="label_password">密码</string>
+    <string name="action_login">登录</string>
 </resources>
